@@ -1,23 +1,31 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const { email } = body;
+    const resendApiKey =
+      process.env.RESEND_API_KEY;
+
+    if (!resendApiKey) {
+      return NextResponse.json(
+        {
+          error: 'Missing RESEND_API_KEY',
+        },
+        { status: 500 }
+      );
+    }
+
+    const resend = new Resend(resendApiKey);
 
     await resend.emails.send({
       from: 'onboarding@resend.dev',
-      to: email,
+      to: body.email,
       subject: 'Your AI Spend Audit',
       html: `
-        <div>
-          <h1>Your audit is ready</h1>
-          <p>Thanks for using AI Spend Auditor.</p>
-        </div>
+        <h1>Audit Generated</h1>
+        <p>Your audit is ready.</p>
       `,
     });
 
@@ -27,11 +35,9 @@ export async function POST(req: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        success: false,
+        error: 'Failed to send email',
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
